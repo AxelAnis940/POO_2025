@@ -5,7 +5,7 @@
 #include <ctime>
 
 using namespace std;
-
+//
 // ---------------------
 // Classe Cell
 // ---------------------
@@ -154,7 +154,7 @@ private:
 public:
     Game(int r, int c, float size) : Grid(r, c, size), running(false)
     {
-        setRandomAlive(10); // démarre avec 10 cellules vivantes
+        setRandomAlive(50); // démarre avec 10 cellules vivantes
     }
 
     void toggleRunning() { running = !running; }
