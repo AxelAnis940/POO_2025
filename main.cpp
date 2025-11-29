@@ -111,6 +111,7 @@ public:
 
     virtual void update()
     {
+        // cette ligne permet de créer une matrice rows*cols remplie de false
         vector<vector<bool>> next(rows, vector<bool>(cols, false));
 
         for (int i = 0; i < rows; i++)
