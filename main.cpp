@@ -52,12 +52,15 @@ class Grid
 protected:
     int rows, cols;
     float cellSize;
+    // matrice de cells
     vector<vector<Cell>> cells;
 
 public:
     Grid(int r, int c, float size) : rows(r), cols(c), cellSize(size)
     {
         cells.resize(rows, vector<Cell>(cols, Cell(0, 0, cellSize)));
+        // x -> cols
+        // y -> rows
         for (int i = 0; i < rows; i++)
         {
             for (int j = 0; j < cols; j++)
@@ -78,6 +81,7 @@ public:
     {
         int j = x / cellSize;
         int i = y / cellSize;
+        // if i et j dans les limitations du Grid
         if (i >= 0 && i < rows && j >= 0 && j < cols)
             cells[i][j].toggle();
     }
@@ -85,14 +89,18 @@ public:
     virtual int countAliveNeighbors(int i, int j)
     {
         int count = 0;
+        // décalage sur les lignes
         for (int di = -1; di <= 1; di++)
         {
+            // décalage sur les colonnes
             for (int dj = -1; dj <= 1; dj++)
             {
+                // ignore le cas di =0 et dj=0 car c'est la cellule elle-même
                 if (di == 0 && dj == 0)
                     continue;
                 int ni = i + di;
                 int nj = j + dj;
+                // verifie que la cellule décalée est bien dans la grille GRID
                 if (ni >= 0 && ni < rows && nj >= 0 && nj < cols)
                     if (cells[ni][nj].isAlive())
                         count++;
