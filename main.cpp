@@ -116,7 +116,7 @@ void runConsole(GameOfLife *game, int iterations, int delayMs)
             {
                 cout << (game->cells[i][j].isAlive() ? "#" : ".");
             }
-            cout << "\n"; // ← FIX !!
+            cout << "\n";
         }
         game->update();
         this_thread::sleep_for(chrono::milliseconds(delayMs));
@@ -162,7 +162,7 @@ void runGUI(GameOfLife *game, int cellSize, int delayMs)
             {
                 sf::RectangleShape rect(sf::Vector2f(cellSize - 1, cellSize - 1));
                 rect.setPosition(j * cellSize, i * cellSize);
-                rect.setFillColor(game->cells[i][j].isAlive() ? sf::Color::White : sf::Color::Black);
+                rect.setFillColor(game->cells[i][j].isAlive() ? sf::Color::Green : sf::Color::Black);
                 window.draw(rect);
             }
         }
