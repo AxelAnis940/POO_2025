@@ -7,29 +7,65 @@
 #include <chrono>
 using namespace std;
 
-//---------------------------------------------
-// Cell class
-//---------------------------------------------
+//-------------------------------------------------------------
+// Base class: Cell
+//-------------------------------------------------------------
 class Cell
 {
+protected:
     bool alive;
 
 public:
     Cell() : alive(false) {}
-    bool isAlive() const { return alive; }
-    void setAlive(bool v) { alive = v; }
+    virtual ~Cell() {}
+
+    virtual bool isAlive() const { return alive; }
+    virtual void setAlive(bool v) { alive = v; }
 };
 
-//---------------------------------------------
+//-------------------------------------------------------------
+// Derived class: ColoredCell (inherits from Cell)
+//-------------------------------------------------------------
+class ColoredCell : public Cell
+{
+    sf::Color color;
+
+public:
+    ColoredCell() : color(sf::Color::Green) {}
+
+    sf::Color getColor() const
+    {
+        return alive ? color : sf::Color::Black;
+    }
+
+    void setColor(const sf::Color &c)
+    {
+        color = c;
+    }
+};
+
+//-------------------------------------------------------------
 // GameOfLife class
-//---------------------------------------------
+//-------------------------------------------------------------
 class GameOfLife
 {
 public:
     int rows, cols;
-    vector<vector<Cell>> cells;
+    vector<vector<Cell *>> cells;
 
-    GameOfLife(int r, int c) : rows(r), cols(c), cells(r, vector<Cell>(c)) {}
+    GameOfLife(int r, int c) : rows(r), cols(c), cells(r, vector<Cell *>(c))
+    {
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
+                cells[i][j] = new ColoredCell(); // ← utilisation de la classe dérivée
+    }
+
+    virtual ~GameOfLife()
+    {
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
+                delete cells[i][j];
+    }
 
     int countAliveNeighbors(int i, int j)
     {
@@ -40,11 +76,13 @@ public:
             {
                 if (di == 0 && dj == 0)
                     continue;
+
                 int ni = i + di;
                 int nj = j + dj;
+
                 if (ni >= 0 && ni < rows && nj >= 0 && nj < cols)
                 {
-                    if (cells[ni][nj].isAlive())
+                    if (cells[ni][nj]->isAlive())
                         count++;
                 }
             }
@@ -61,7 +99,8 @@ public:
             for (int j = 0; j < cols; j++)
             {
                 int aliveNeighbors = countAliveNeighbors(i, j);
-                if (cells[i][j].isAlive())
+
+                if (cells[i][j]->isAlive())
                     next[i][j] = (aliveNeighbors == 2 || aliveNeighbors == 3);
                 else
                     next[i][j] = (aliveNeighbors == 3);
@@ -70,13 +109,13 @@ public:
 
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++)
-                cells[i][j].setAlive(next[i][j]);
+                cells[i][j]->setAlive(next[i][j]);
     }
 };
 
-//---------------------------------------------
+//-------------------------------------------------------------
 // Load grid from file
-//---------------------------------------------
+//-------------------------------------------------------------
 GameOfLife *loadFromFile(const string &filename)
 {
     ifstream f(filename);
@@ -88,6 +127,7 @@ GameOfLife *loadFromFile(const string &filename)
 
     int rows, cols;
     f >> rows >> cols;
+
     GameOfLife *game = new GameOfLife(rows, cols);
 
     for (int i = 0; i < rows; i++)
@@ -96,40 +136,46 @@ GameOfLife *loadFromFile(const string &filename)
         {
             int v;
             f >> v;
-            game->cells[i][j].setAlive(v == 1);
+            game->cells[i][j]->setAlive(v == 1);
         }
     }
     return game;
 }
 
-//---------------------------------------------
+//-------------------------------------------------------------
 // Console mode
-//---------------------------------------------
+//-------------------------------------------------------------
 void runConsole(GameOfLife *game, int iterations, int delayMs)
 {
     for (int k = 0; k < iterations; k++)
     {
         system("clear");
+
         for (int i = 0; i < game->rows; i++)
         {
             for (int j = 0; j < game->cols; j++)
             {
-                cout << (game->cells[i][j].isAlive() ? "#" : ".");
+                cout << (game->cells[i][j]->isAlive() ? "#" : ".");
             }
             cout << "\n";
         }
+
         game->update();
         this_thread::sleep_for(chrono::milliseconds(delayMs));
     }
 }
 
-//---------------------------------------------
-// GUI mode with adjustable speed
-//---------------------------------------------
+//-------------------------------------------------------------
+// GUI mode
+//-------------------------------------------------------------
 void runGUI(GameOfLife *game, int cellSize, int delayMs)
 {
     int speed = delayMs;
-    sf::RenderWindow window(sf::VideoMode(game->cols * cellSize, game->rows * cellSize), "Game of Life");
+
+    sf::RenderWindow window(
+        sf::VideoMode(game->cols * cellSize, game->rows * cellSize),
+        "Game of Life");
+
     window.setFramerateLimit(60);
 
     while (window.isOpen())
@@ -147,7 +193,7 @@ void runGUI(GameOfLife *game, int cellSize, int delayMs)
                     if (speed > 10)
                         speed -= 10;
                 }
-                if (e.key.code == sf::Keyboard::Subtract || e.key.code == sf::Keyboard::Dash)
+                if (e.key.code == sf::Keyboard::Dash)
                 {
                     speed += 10;
                 }
@@ -160,9 +206,12 @@ void runGUI(GameOfLife *game, int cellSize, int delayMs)
         {
             for (int j = 0; j < game->cols; j++)
             {
+                ColoredCell *c = dynamic_cast<ColoredCell *>(game->cells[i][j]);
+
                 sf::RectangleShape rect(sf::Vector2f(cellSize - 1, cellSize - 1));
                 rect.setPosition(j * cellSize, i * cellSize);
-                rect.setFillColor(game->cells[i][j].isAlive() ? sf::Color::Green : sf::Color::Black);
+                rect.setFillColor(c ? c->getColor() : sf::Color::White);
+
                 window.draw(rect);
             }
         }
@@ -173,14 +222,14 @@ void runGUI(GameOfLife *game, int cellSize, int delayMs)
     }
 }
 
-//---------------------------------------------
+//-------------------------------------------------------------
 // Main
-//---------------------------------------------
+//-------------------------------------------------------------
 int main(int argc, char **argv)
 {
     if (argc < 3)
     {
-        cout << "Usage: ./gameOfLife <input_file> <console|gui> [iterations] [cellSize] [delayMs]\n"; // ← FIX !!
+        cout << "Usage: ./gameOfLife <input_file> <console|gui> [iterations] [cellSize] [delayMs]\n";
         return 1;
     }
 
