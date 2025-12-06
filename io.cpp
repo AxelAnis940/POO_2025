@@ -60,7 +60,7 @@ void runGUI(GameOfLife *game, int cellSize, int delayMs)
 
     sf::RenderWindow window(
         sf::VideoMode(game->cols * cellSize, game->rows * cellSize),
-        "Game of Life");
+        "Jeu de la vie");
 
     window.setFramerateLimit(60);
 
