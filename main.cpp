@@ -1,10 +1,24 @@
 #include <iostream>
 #include "io.h"
+#include "tests.h"
 
 using namespace std;
 
 int main(int argc, char **argv)
 {
+    if (argc == 2 && string(argv[1]) == "--test")
+    {
+        GameOfLife g(10, 10);
+
+        cout << "Test validité grille : "
+             << (testGridValidity(g, 5) ? "OK" : "ECHEC") << endl;
+
+        cout << "Test règles Game of Life : "
+             << (testGameOfLifeRules() ? "OK" : "ECHEC") << endl;
+
+        return 0;
+    }
+
     if (argc < 3)
     {
         cout << "Usage: ./gameOfLife <input_file> <console|gui> [iterations] [cellSize] [delayMs]\n";
